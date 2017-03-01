@@ -1,20 +1,29 @@
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+
+var password = '123abc!';
+
+// bcrypt.getSalt(10, (err, salt) => {
+//     bcrypt.hash(password, salt, (err, hash) => {
+//         console.log(hash);
+//     })
+// });
+
 
 // jwt.sign
 // jwt.verify
 
-var data = {
-    id: 10
-};
-
-// String <- jwt.sign(object, 'someRandomSecret');
-var token = jwt.sign(data, '123abs'); // face un token (String), care are informatia
-                                      // despre data cat si hash-ul ei
-
-// Object <- jwt.verify(String, 'someRandomSecret');                          
-var decode = jwt.verify(token, '123abs'); // retruneaza obiectul intial care a fost codat
-console.log(decode);
-
+// var data = {
+//     id: 10
+// };
+//
+// // String <- jwt.sign(object, 'someRandomSecret');
+// var token = jwt.sign(data, '123abs'); // face un token (String), care are informatia
+//                                       // despre data cat si hash-ul ei
+//
+// // Object <- jwt.verify(String, 'someRandomSecret');
+// var decode = jwt.verify(token, '123abs'); // retruneaza obiectul intial care a fost codat
+// console.log(decode);
 
 
 // const {SHA256} = require('crypto-js');
