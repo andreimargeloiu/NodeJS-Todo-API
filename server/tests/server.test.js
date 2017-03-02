@@ -4,7 +4,8 @@ const request = require ('supertest');
 const {ObjectID} = require ('mongodb');
 const {app} = require ('./../server.js');
 const {Todo} = require ('./../models/todo');
-
+const {todos, populateTodos, users, populateUsers} = require('./seeds/seed.js');
+const {User} = require('./../models/user.js');
 // inainte ca fiecare test sa se execute, se executa bucata de cod de mai jos
 // beforeEach((done) => {
 // 	Todo.remove({}).then(() => {
@@ -12,24 +13,8 @@ const {Todo} = require ('./../models/todo');
 // 	});
 // });
 
-
-const todos = [{
-	_id: new ObjectID(),
-	text: 'First test todo'
-}, {
-	_id: new ObjectID(),
-	text: 'Second test todo',
-	completed: true,
-	completedAt: 333
-}];
-
-
-beforeEach((done) => {
-	Todo.remove({}).then(() => {
-		return Todo.insertMany(todos);
-	}).then(() => done());
-});
-
+beforeEach(populateUsers);
+beforeEach(populateTodos);
 
 describe('POST /postodos', () => {
 	it ('should create a new todo', (done) => {
@@ -62,7 +47,7 @@ describe ('GET /todos', () => {
 			.get('/todos')
 			.expect(200)
 			.expect((res) => {
-				expect(res.body.todos.length).toBe(2);	 
+				expect(res.body.todos.length).toBe(2);
 			})
 			.end((err, res) => {
 				if (err) {
@@ -107,7 +92,7 @@ describe ('GET /todos/:id', () => {
 					return done(err);
 				}
 				done();
-			}); 
+			});
 	})
 });
 
@@ -157,7 +142,7 @@ describe('DELETE /todos/:id', () => {
 					return done(err);
 				}
 				done();
-			}); 
+			});
 	});
 });
 
@@ -192,10 +177,116 @@ describe('PATCH /todos/:id', () => {
 				expect(res.body.todo.completed).toBe(false);
 			})
 			.end(done);
-
-
 	});
 });
 
+describe('GET /users/me', () => {
+	it ('should return user if authentificated', (done) => {
+		request(app)
+			.get('/users/me')
+			.set('x-auth', users[0].tokens[0].token)
+			.expect(200)
+			.expect((res) => {
+				expect(res.body._id).toBe(users[0]._id.toHexString());
+				expect(res.body.email).toBe(users[0].email);
+			}).end(done);
+	});
 
+	it ('should return 401 if not authentificated', (done) => {
+		request(app)
+			.get('/users/me')
+			.expect(401)
+			.expect((res) => {
+				expect(res.body).toEqual({});
+			}).end(done);
+	});
+});
 
+describe('POST /users', () => {
+	it ('should create a new user', (done) => {
+		var email = 'example@eample.com';
+		var password = '123mnb!';
+
+		request(app)
+			.post('/users')
+			.send({email, password})
+			.expect(200)
+			.expect((res) => {
+				expect(res.headers['x-auth']).toExist();
+				expect(res.body._id).toExist();
+				expect(res.body.email).toBe(email);
+			}).end(done);
+	});
+
+	it ('should return valdiation errors if request invalid', (done) => {
+		request(app)
+			.post('/users')
+			.send({
+				email: 'and',
+				password: '123'
+			})
+			.expect(400)
+			.end(done);
+	});
+
+	it ('should not create user if email in use', (done) => {
+		request(app)
+			.post('/users')
+			.send({
+				email: users[0].email,
+				password: '123'
+			})
+			.expect(400)
+			.end(done);
+	});
+});
+
+describe('POST /users/login', () => {
+	it ('should login user and return token', (done) => {
+		request(app)
+			.post('/users/login')
+			.send({
+			    email: users[1].email,
+			    password: users[1].password
+			})
+			.expect(200)
+			.expect((res) => {
+				expect(res.headers['x-auth']).toExist();
+			})
+			.end((err, res) => {
+				if (err) {
+					return done(err);
+				}
+
+				User.findById(users[1]._id).then((user) => {
+					expect(user.tokens[0]).toInclude({
+						access: 'auth',
+						token: res.headers['x-auth']
+					});
+					done();
+				}).catch((err) => done(err));
+			});
+	});
+
+	it ('should reject invalid login', (done) => {
+		request(app)
+			.post('/users/login')
+			.send({
+				email: 'abromania@yahoo.com',
+				password: '123124'
+			})
+			.expect(400)
+			.expect((res) => {
+				expect(res.headers['x-auth']).toNotExist();
+			})
+			.end((err, res) => {
+				if (err) {
+					return err;
+				}
+				User.findById(users[1]._id).then((user) => {
+					expect(user.tokens.length).toBe(0);
+					done();
+				}).catch((err) => done(err));
+			});
+	});
+});

@@ -6,7 +6,7 @@ var password = '123abc!';
 // bcrypt.getSalt(10, (err, salt) => {
 //     bcrypt.hash(password, salt, (err, hash) => {
 //         console.log(hash);
-//     })
+//     });
 // });
 
 
