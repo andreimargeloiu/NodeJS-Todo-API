@@ -1,1 +1,2 @@
-Simple To-Do API in NodeJS. Create part of a programming course.
+My first code written in NodeJS. 
+It's a To-Do API created part of a programming course.
